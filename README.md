@@ -1,36 +1,92 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# saasproduct.dev
 
-## Getting Started
+A config-driven SaaS landing page starter built with Next.js 16, Tailwind CSS v4, and shadcn/ui (preset `a48`). Clone it, edit `src/config/`, and ship.
 
-First, run the development server:
+## Stack
+
+| Layer      | Tool                                |
+|------------|-------------------------------------|
+| Framework  | Next.js 16 App Router + TypeScript  |
+| Styling    | Tailwind CSS v4                     |
+| Components | shadcn/ui — preset `a48`            |
+| Icons      | lucide-react + react-icons/si       |
+| Theme      | next-themes (light / dark / system) |
+| Auth       | Better Auth (drop-in, see below)    |
+
+## Quick start
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/your-org/your-repo
+cd your-repo
+npm install
+cp .env.example .env.local   # fill in values
+npm run dev                  # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Rebrand in minutes
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+All copy, routes, nav links, feature cards, and social icons live in `src/config/`. Nothing is hardcoded in components.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| File | Controls |
+|------|----------|
+| `src/config/site.ts` | Company name, logo letter, tagline, URL, social links, copyright |
+| `src/config/navigation.ts` | Navbar links (with dropdowns), CTA buttons, mobile nav, footer nav |
+| `src/config/features.ts` | Features section heading + all feature cards (title, description, lucide icon name) |
+| `src/config/content.ts` | Hero copy, code showcase, tech stack, infrastructure section |
 
-## Learn More
+Minimum changes to rebrand:
 
-To learn more about Next.js, take a look at the following resources:
+1. Edit `src/config/site.ts` — name, logoLetter, tagline, description, url, links, socialLinks
+2. Edit `src/config/navigation.ts` — update hrefs and labels
+3. Edit `src/config/features.ts` — replace feature cards
+4. Edit `src/config/content.ts` — hero headline, code block, bullet points
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Project structure
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```text
+src/
+  app/
+    layout.tsx            RootLayout, ThemeProvider, metadata
+    page.tsx              Composes all landing page sections
+  components/
+    navbar.tsx            Sticky header, dropdown nav, mobile Sheet
+    hero.tsx              Centered hero + side decorations
+    features.tsx          3-col feature card grid
+    content-sections.tsx  CodeShowcase, TechStack, Infrastructure
+    footer.tsx            5-col footer with brand-colored social icons
+    theme-provider.tsx    next-themes wrapper
+    ui/                   shadcn primitives (do not edit manually)
+  config/
+    site.ts / navigation.ts / features.ts / content.ts / index.ts
+  lib/
+    utils.ts              cn() utility
+```
 
-## Deploy on Vercel
+## Adding auth (Better Auth)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+This project is pre-configured for Better Auth. See `.claude/skills/better-auth/` for drop-in scaffolding, or install manually:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm install better-auth
+```
+
+Then fill in your `.env.local`:
+
+```bash
+DATABASE_URL=your_connection_string
+BETTER_AUTH_SECRET=your_secret_here
+```
+
+## Commands
+
+```bash
+npm run dev          # start dev server — http://localhost:3000
+npm run build        # production build
+npm run start        # serve production build
+npm run lint         # ESLint
+npx tsc --noEmit     # type check (must pass before any commit)
+```
+
+## Design rules for AI agents
+
+See [CLAUDE.md](./CLAUDE.md) — loaded automatically by Claude Code. Contains all shadcn/ui conventions, mobile-first responsive rules, and component patterns enforced across the codebase.

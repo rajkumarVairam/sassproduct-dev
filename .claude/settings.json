@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /c/Development/sassproduct-dev -type f -name package.json -o -name package-lock.json -o -name README.md -o -name CLAUDE.md -o -name .env* -o -name tsconfig.json -o -name next.config.js)",
+      "Bash(find /c/Development/sassproduct-dev -maxdepth 3 -type f \\\\\\(-name *.json -o -name *.js -o -name *.ts -o -name *.tsx -o -name *.md \\\\\\))",
+      "Bash(grep -v \"^\\\\.$\")",
+      "Bash(git config:*)",
+      "Bash(find /c/Development/sassproduct-dev -type f \\\\\\(-name *.tsx -o -name *.ts -o -name *.jsx -o -name *.js -o -name package.json \\\\\\))",
+      "WebFetch(domain:better-auth.com)",
+      "Bash(npx shadcn@latest init --preset a48 -d)",
+      "Bash(npx shadcn@latest init --preset a48)",
+      "Bash(printf \"y\\\\n.\\\\n\")",
+      "Bash(printf '\\\\nsassproduct-dev\\\\n')",
+      "Bash(npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --yes)",
+      "Bash(npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --yes --force)",
+      "Read(//c/tmp/**)",
+      "Bash(npx create-next-app@latest sassproduct --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --yes)",
+      "Bash(npx shadcn@latest add button navigation-menu dropdown-menu sheet badge card separator)",
+      "Bash(npm install:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run:*)",
+      "Bash(npx shadcn@latest add form sonner alert alert-dialog skeleton table breadcrumb)",
+      "Bash(npx shadcn@latest add form input label textarea select)",
+      "Bash(npx shadcn@latest add form)",
+      "Bash(npx shadcn@latest add --help)",
+      "Bash(npx shadcn@latest add -y form)"
+    ]
+  }
+}
