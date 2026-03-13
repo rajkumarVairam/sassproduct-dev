@@ -69,7 +69,9 @@ export function Navbar() {
   }, []);
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
+    // pt-safe: pushes navbar content below iPhone notch (viewport-fit=cover required).
+    // px-safe: prevents content hiding behind side cutouts in landscape mode.
+    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60 pt-safe px-safe">
       <div className="mx-auto flex h-14 max-w-7xl items-center gap-6 px-4 sm:px-6">
 
         {/* Logo */}

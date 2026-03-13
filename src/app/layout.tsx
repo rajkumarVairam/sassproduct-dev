@@ -47,6 +47,9 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
+  // cover: lets the sticky navbar background fill behind the iPhone notch.
+  // Safe-area padding (pt-safe etc.) then pushes the actual content clear of it.
+  viewportFit: "cover",
   // Matches CSS --background in light/dark mode (zinc-50 / zinc-950)
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#fafafa" },

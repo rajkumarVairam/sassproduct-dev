@@ -5,6 +5,33 @@ All agents working on this project **must follow every rule below** before writi
 
 ---
 
+## 0. Pre-commit self-review — mandatory before every `git commit`
+
+**Before running `git commit`, self-verify every changed file against the §7 checklist.**
+Do not commit if any applicable item is unchecked. Fix the violation first.
+
+Quick verification steps:
+
+```bash
+npx tsc --noEmit          # must output nothing (zero type errors)
+npm run lint              # must pass with zero errors
+```
+
+Then mentally walk through the §7 checklist categories relevant to the changed files:
+
+| Changed file type          | Checklist sections to verify              |
+|----------------------------|-------------------------------------------|
+| Any new page               | TypeScript, Next.js, SEO & Metadata, Special Next.js files, Accessibility |
+| Any new layout             | Accessibility (`<main id="main-content">`, skip-nav target), Mobile/responsive |
+| Any new form               | Forms (all 10 items), Accessibility, Feedback |
+| Any new component          | shadcn/ui conventions, Mobile/responsive, Accessibility |
+| Any new data table/list    | Data display, Accessibility              |
+| Any new route segment      | Special Next.js files (error, loading, not-found) |
+
+**If you are unsure whether an item applies — it does. Check it.**
+
+---
+
 ## 1. Stack
 
 | Layer      | Tool                                                            |
@@ -503,12 +530,40 @@ Tailwind breakpoints respond to **viewport width**, not container width.
 
 Don't add `sm:`, `md:`, `lg:` just for incremental steps. Broken grids are worse than simpler ones.
 
-### 5e. Tap target sizes
+### 5e. iPhone notch & home indicator — safe-area utilities
+
+`viewport-fit=cover` (set in `layout.tsx` `viewport` export) lets the navbar background
+fill behind the iPhone notch. Apply safe-area utilities to push actual content clear.
+
+Custom utilities are defined in `globals.css` — no plugin needed:
+
+| Utility   | CSS property                                        | When to use                        |
+|-----------|-----------------------------------------------------|------------------------------------|
+| `pt-safe` | `padding-top: env(safe-area-inset-top)`             | Sticky/fixed headers               |
+| `pb-safe` | `padding-bottom: env(safe-area-inset-bottom)`       | Fixed footers, bottom bars, modals |
+| `pl-safe` | `padding-left: env(safe-area-inset-left)`           | Full-width containers (landscape)  |
+| `pr-safe` | `padding-right: env(safe-area-inset-right)`         | Full-width containers (landscape)  |
+| `px-safe` | both left + right                                   | Sticky header in landscape         |
+
+```tsx
+// WRONG — notch overlaps navbar content on iPhone X+
+<header className="sticky top-0 z-50 ...">
+
+// CORRECT — background fills behind notch, content pushed clear
+<header className="sticky top-0 z-50 ... pt-safe px-safe">
+
+// Auth / full-screen layouts — protect home indicator at bottom
+<main className="min-h-screen ... pb-safe">
+```
+
+On non-notched devices, `env(safe-area-inset-*, 0px)` resolves to `0` — no visual change.
+
+### 5g. Tap target sizes
 
 Interactive elements on mobile must be at minimum `44×44px`. `size-8` (32px) icon buttons meet
 this via the Button component's internal padding — do not reduce further.
 
-### 5f. Section layout — consistent padding and container across all sections
+### 5h. Section layout — consistent padding and container across all sections
 
 Every landing page section uses the same outer/inner pattern:
 
@@ -725,6 +780,9 @@ Before submitting any new UI file, verify every item:
 
 - [ ] Action buttons use `w-full sm:w-auto` pattern on marketing pages
 - [ ] Mobile Sheet uses controlled open state + `MediaQueryList` auto-close
+- [ ] Sticky/fixed headers have `pt-safe px-safe` (iPhone notch)
+- [ ] Full-screen layouts (`min-h-screen`) have `pb-safe` (home indicator)
+- [ ] Mobile Sheet width uses `w-[min(18rem,90vw)]` not a fixed `w-72`
 
 ### SEO & Metadata
 

@@ -9,7 +9,7 @@ export default function AuthLayout({
   return (
     <main
       id="main-content"
-      className="min-h-screen flex flex-col items-center justify-center bg-background px-4 py-12"
+      className="min-h-screen flex flex-col items-center justify-center bg-background px-4 py-12 pb-safe"
     >
       <Link
         href="/"
