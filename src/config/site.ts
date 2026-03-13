@@ -8,13 +8,13 @@
 
 export const siteConfig = {
   /** Short name shown in the navbar logo and browser tab */
-  name: "saasproduct.dev",
+  name: "SaaSproduct.dev",
 
   /** Single letter used in the icon badge */
   logoLetter: "S",
 
   /** Full display name with punctuation (used in footer, page titles, etc.) */
-  displayName: "saasproduct.dev",
+  displayName: "SaaSproduct.dev",
 
   /** Browser <title> suffix */
   tagline: "Own Your Auth",

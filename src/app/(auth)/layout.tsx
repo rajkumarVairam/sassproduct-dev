@@ -7,7 +7,10 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4 py-12">
+    <main
+      id="main-content"
+      className="min-h-screen flex flex-col items-center justify-center bg-background px-4 py-12"
+    >
       <Link
         href="/"
         className="mb-8 flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
@@ -18,6 +21,6 @@ export default function AuthLayout({
         {siteConfig.name}
       </Link>
       {children}
-    </div>
+    </main>
   );
 }

@@ -53,6 +53,8 @@ function ThemeToggle() {
 export function Navbar() {
   // Controlled Sheet state so we can close it programmatically.
   const [sheetOpen, setSheetOpen] = React.useState(false);
+  // Ref so we can restore focus to the hamburger button when the sheet closes.
+  const hamburgerRef = React.useRef<HTMLButtonElement>(null);
 
   // Close the mobile Sheet when the viewport reaches the desktop breakpoint.
   // Without this, resizing from mobile to desktop leaves the Sheet open as a
@@ -143,11 +145,27 @@ export function Navbar() {
           {/* Mobile Sheet — controlled open state so it closes on viewport resize */}
           <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="size-8 md:hidden">
+              <Button
+                ref={hamburgerRef}
+                variant="ghost"
+                size="icon"
+                className="size-8 md:hidden"
+                aria-label="Open navigation menu"
+              >
                 <Menu data-icon />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-72">
+            {/* w-[min(18rem,90vw)] caps at 18rem but never exceeds 90% of viewport —
+                prevents overflow on 320px phones while staying full on normal devices */}
+            <SheetContent
+              side="right"
+              className="w-[min(18rem,90vw)]"
+              onCloseAutoFocus={(e) => {
+                // Return focus to the hamburger button so keyboard users aren't lost
+                e.preventDefault();
+                hamburgerRef.current?.focus();
+              }}
+            >
               <SheetHeader>
                 <SheetTitle className="text-left font-bold">{siteConfig.displayName}</SheetTitle>
               </SheetHeader>

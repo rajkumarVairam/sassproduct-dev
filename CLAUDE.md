@@ -62,9 +62,13 @@ export function Navbar() {
 ```
 
 Server Components that are currently in this project (NO `"use client"`):
-`hero.tsx`, `features.tsx`, `content-sections.tsx`, `footer.tsx`, `theme-provider.tsx` (wraps client internally)
+`hero.tsx`, `features.tsx`, `content-sections.tsx`, `footer.tsx`, `theme-provider.tsx` (wraps client internally),
+`(auth)/sign-in/page.tsx`, `(auth)/sign-up/page.tsx` (pages export metadata — form logic is in `components/auth/`)
 
-Client Components (have `"use client"`): `navbar.tsx`, `(auth)/sign-in/page.tsx`, `(auth)/sign-up/page.tsx`
+Client Components (have `"use client"`): `navbar.tsx`, `components/auth/sign-in-form.tsx`, `components/auth/sign-up-form.tsx`
+
+**Rule:** Never put `"use client"` on a page that needs to export `metadata` or `generateMetadata`.
+Extract the interactive parts into a separate Client Component (e.g. `<SignInForm>`) and keep the page as a Server Component.
 
 ### 3b. Internal links — always `next/link`, never `<a>`
 
@@ -79,7 +83,93 @@ import Link from "next/link";
 
 External URLs (opening new tab) may use `<a href="..." target="_blank" rel="noopener noreferrer">`.
 
-### 3c. Images — always `next/image`, never `<img>`
+### 3c. Metadata — export from every page (Server Components only)
+
+Every page must export either static `metadata` or a `generateMetadata` function.
+The `metadata.title.template` in the root layout auto-appends the site name.
+
+```tsx
+// Root layout — sets template and site-wide defaults
+export const metadata: Metadata = {
+  title: { default: "SaaSproduct.dev", template: "%s — SaaSproduct.dev" },
+  description: siteConfig.description,
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? siteConfig.url),
+  openGraph: { type: "website", ... },
+  twitter: { card: "summary_large_image", ... },
+  robots: { index: true, follow: true },
+};
+
+// Viewport is exported separately (Next.js 14+ requirement)
+export const viewport: Viewport = {
+  width: "device-width", initialScale: 1, maximumScale: 5,
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fafafa" },
+    { media: "(prefers-color-scheme: dark)", color: "#09090b" },
+  ],
+};
+
+// Individual page — title becomes "Sign in — SaaSproduct.dev"
+export const metadata: Metadata = {
+  title: "Sign in",
+  description: "Sign in to your account to continue.",
+};
+
+// Dynamic route — use generateMetadata
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const post = await getPost(params.slug);
+  return { title: post.title, description: post.excerpt };
+}
+```
+
+**Never** export `metadata` from a `"use client"` file — Next.js silently ignores it.
+
+### 3d. Special App Router files — required for every route segment
+
+Missing these files leaves users with blank pages or Next.js defaults on errors.
+
+```text
+src/app/
+  error.tsx       — "use client" error boundary, receives { error, reset }
+  loading.tsx     — Suspense fallback, matched to the content shape (use Skeleton)
+  not-found.tsx   — Custom 404, called by notFound() or unmatched routes
+```
+
+```tsx
+// error.tsx — must be "use client"
+"use client";
+export default function Error({ error, reset }: { error: Error; reset: () => void }) {
+  return (
+    <main id="main-content" className="min-h-screen flex flex-col items-center justify-center px-4 text-center">
+      <h1 className="text-2xl font-bold tracking-tight">Something went wrong</h1>
+      <div className="mt-6 flex gap-3">
+        <Button onClick={reset}>Try again</Button>
+        <Button variant="outline" asChild><a href="/">Go home</a></Button>
+      </div>
+    </main>
+  );
+}
+
+// loading.tsx — Server Component, match shape of page content
+import { Skeleton } from "@/components/ui/skeleton";
+export default function Loading() {
+  return <div className="flex flex-col gap-3">...</div>; // Skeleton shapes
+}
+
+// not-found.tsx — Server Component
+export default function NotFound() {
+  return (
+    <main id="main-content" className="min-h-screen flex flex-col items-center justify-center px-4 text-center">
+      <p className="text-sm font-medium text-muted-foreground">404</p>
+      <h1 className="text-3xl font-bold tracking-tight mt-2">Page not found</h1>
+      <Button className="mt-8" asChild><Link href="/">Go back home</Link></Button>
+    </main>
+  );
+}
+```
+
+Use `<a href="/">` instead of `<Link href="/">` inside `error.tsx` — routing may be impaired during error recovery.
+
+### 3e. Images — always `next/image`, never `<img>`
 
 ```tsx
 // WRONG — no optimization, layout shift
@@ -493,6 +583,62 @@ should be aria-hidden or use `data-icon` which handles it:
 - Footer: `<footer>`
 - Never use `<div>` for structural landmarks
 
+### 6e. `<main id="main-content">` — required on every layout
+
+Every layout that renders page content must wrap it in `<main id="main-content">`.
+This is the skip-to-main target and the primary landmark for screen readers.
+
+```tsx
+// WRONG — content not in a landmark
+<div className="min-h-screen ...">
+  {children}
+</div>
+
+// CORRECT — landmark with skip target id
+<main id="main-content" className="min-h-screen ...">
+  {children}
+</main>
+```
+
+The root `layout.tsx` renders the skip link that targets `#main-content`:
+
+```tsx
+// In <body>, before ThemeProvider
+<a
+  href="#main-content"
+  className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:bg-background focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:shadow-md focus:ring-2 focus:ring-ring focus:outline-none"
+>
+  Skip to main content
+</a>
+```
+
+### 6f. Focus restoration — required after Sheet / Dialog close
+
+When a Sheet, Dialog, or Drawer closes, keyboard focus must return to the element that opened it.
+Radix-based components provide `onCloseAutoFocus` on their content for this purpose.
+
+```tsx
+// WRONG — focus is lost after close (lands on body)
+<SheetContent side="right">...</SheetContent>
+
+// CORRECT — ref on trigger, explicit restoration via onCloseAutoFocus
+const triggerRef = React.useRef<HTMLButtonElement>(null);
+
+<Sheet>
+  <SheetTrigger asChild>
+    <Button ref={triggerRef}>Open</Button>
+  </SheetTrigger>
+  <SheetContent
+    onCloseAutoFocus={(e) => {
+      e.preventDefault(); // prevent Radix default (focuses trigger automatically but inconsistently)
+      triggerRef.current?.focus();
+    }}
+  >
+    ...
+  </SheetContent>
+</Sheet>
+```
+
 ---
 
 ## 7. New page / component checklist
@@ -545,10 +691,15 @@ Before submitting any new UI file, verify every item:
 
 ### Forms
 
+- [ ] Auth pages are Server Components (no `"use client"`) — form logic extracted to `components/auth/*.tsx`
 - [ ] All forms use `Form` + `FormField` + `FormItem` + `FormLabel` + `FormControl` + `FormMessage`
 - [ ] Schema defined with `zod`, resolver passed to `useForm`
+- [ ] Email inputs have `type="email"` + `inputMode="email"` + `autoComplete="email"`
+- [ ] Password inputs use `<PasswordInput>` (not raw `<Input type="password">`)
+- [ ] New password uses `autoComplete="new-password"`, login uses `autoComplete="current-password"`
+- [ ] First visible field in standalone forms has `autoFocus`
 - [ ] Submit button shows loading state (`disabled` + spinner) while submitting
-- [ ] Server errors mapped to field errors via `form.setError()`
+- [ ] Server errors use `form.setError("root")` + `<p role="alert">` to display
 - [ ] Auth forms: `w-full` submit button; Settings forms: `self-start` submit button
 
 ### Feedback
@@ -575,8 +726,25 @@ Before submitting any new UI file, verify every item:
 - [ ] Action buttons use `w-full sm:w-auto` pattern on marketing pages
 - [ ] Mobile Sheet uses controlled open state + `MediaQueryList` auto-close
 
+### SEO & Metadata
+
+- [ ] Root `layout.tsx` exports `metadata` (OG, Twitter, robots, canonical) and `viewport`
+- [ ] Every page exports `metadata` or `generateMetadata` with `title` and `description`
+- [ ] `public/robots.txt` exists and allows/disallows correct routes
+- [ ] `src/app/sitemap.ts` exists and lists all public routes
+- [ ] `metadataBase` set to `process.env.NEXT_PUBLIC_APP_URL ?? siteConfig.url`
+
+### Special Next.js files
+
+- [ ] `src/app/error.tsx` exists (`"use client"`, exposes Try again + Go home)
+- [ ] `src/app/loading.tsx` exists (Skeleton shapes matching page content)
+- [ ] `src/app/not-found.tsx` exists (404 with Go back home button)
+
 ### Accessibility
 
+- [ ] Root layout `<body>` starts with a skip-to-main `<a href="#main-content">` link
+- [ ] Every layout wraps content in `<main id="main-content">`
+- [ ] Sheet / Dialog trigger uses a `ref` + `onCloseAutoFocus` restores focus to it on close
 - [ ] Icon-only buttons have `aria-label`
 - [ ] Decorative icons use `data-icon` or `aria-hidden="true"`
 - [ ] Visually hidden text uses `sr-only`, not `hidden`
@@ -686,7 +854,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
 All forms use **shadcn Form + react-hook-form + zod**. No exceptions.
 
-### 9a. Always use the full Form composition
+### 9a. Form + page structure for auth/settings pages
+
+Auth pages must be **Server Components** so they can export `metadata`. Extract form logic into a `"use client"` component:
+
+```text
+src/app/(auth)/sign-in/
+  page.tsx                  ← Server Component, exports metadata, renders Card + <SignInForm>
+src/components/auth/
+  sign-in-form.tsx          ← "use client", owns useForm / onSubmit / JSX form
+```
+
+### 9b. Always use the full Form composition
 
 ```tsx
 // WRONG — raw inputs, no validation, no accessible labels
@@ -759,7 +938,53 @@ export function SignInForm() {
 }
 ```
 
-### 9b. Form layout rules
+### 9c. Input attributes — mobile keyboard + autofill
+
+Every form input must include these attributes for mobile UX and browser autofill:
+
+| Input type     | `type`     | `inputMode`     | `autoComplete`       |
+|----------------|------------|-----------------|----------------------|
+| Email          | `email`    | `email`         | `email`              |
+| Current password | `password` | —             | `current-password`   |
+| New password   | `password` | —               | `new-password`       |
+| Name           | `text`     | `text`          | `name`               |
+| Phone          | `tel`      | `tel`           | `tel`                |
+| Number / OTP   | `text`     | `numeric`       | `one-time-code`      |
+
+- `autoFocus` on the **first visible field** in standalone forms (sign-in, sign-up, search)
+- Never use `autoFocus` on fields below the fold or inside drawers
+
+### 9d. Password fields — always use `<PasswordInput>`
+
+Use the `PasswordInput` component (`src/components/ui/password-input.tsx`) for all password fields.
+It wraps `<Input type="password">` with a show/hide eye-icon toggle.
+
+```tsx
+// WRONG — raw Input, user cannot verify what they typed
+<Input type="password" autoComplete="current-password" {...field} />
+
+// CORRECT — PasswordInput adds show/hide toggle automatically
+import { PasswordInput } from "@/components/ui/password-input";
+<PasswordInput autoComplete="current-password" {...field} />
+```
+
+### 9e. Root (non-field) errors — use `role="alert"`
+
+```tsx
+// WRONG — silent error, screen readers don't announce it
+{form.formState.errors.root && (
+  <p className="text-sm text-destructive">{form.formState.errors.root.message}</p>
+)}
+
+// CORRECT — announced immediately when it appears
+{form.formState.errors.root && (
+  <p role="alert" className="text-sm font-medium text-destructive">
+    {form.formState.errors.root.message}
+  </p>
+)}
+```
+
+### 9f. Form layout rules
 
 ```tsx
 // Field spacing — always flex flex-col gap-4, never gap-6 or space-y-*
@@ -788,7 +1013,7 @@ export function SignInForm() {
 // — Settings forms: self-start (natural width, left-aligned)
 ```
 
-### 9c. Submit / loading state — always reflect pending state
+### 9g. Submit / loading state — always reflect pending state
 
 ```tsx
 // WRONG — no feedback during submission
@@ -802,7 +1027,7 @@ export function SignInForm() {
 </Button>
 ```
 
-### 9d. Server-side errors — map to field errors
+### 9h. Server-side errors — map to field errors
 
 ```tsx
 // After a failed server action, set field-level errors
@@ -1130,15 +1355,23 @@ App pages are denser than landing pages — use tighter type:
 ```text
 src/
   app/
-    layout.tsx              — RootLayout + ThemeProvider + Toaster + metadata
-    page.tsx                — marketing home, composes section components, no logic
+    layout.tsx              — RootLayout: skip-nav, ThemeProvider, Toaster, metadata + viewport exports
+    page.tsx                — marketing home — <main id="main-content">, no logic
+    error.tsx               — "use client" global error boundary
+    loading.tsx             — global Suspense fallback (Skeleton shapes)
+    not-found.tsx           — custom 404 page
+    sitemap.ts              — dynamic sitemap for search engines
     (auth)/
-      sign-in/page.tsx      — centered card auth layout (see rule 8c)
-      sign-up/page.tsx
+      layout.tsx            — <main id="main-content"> centered shell + logo link
+      sign-in/page.tsx      — Server Component, exports metadata, renders SignInForm
+      sign-up/page.tsx      — Server Component, exports metadata, renders SignUpForm
     (app)/
       layout.tsx            — app shell (sidebar + SidebarInset)
       dashboard/page.tsx    — post-login pages, use app page container (see rule 8a)
   components/
+    auth/
+      sign-in-form.tsx      — "use client" — form logic for sign-in
+      sign-up-form.tsx      — "use client" — form logic for sign-up
     navbar.tsx              — "use client" — sticky header, NavigationMenu, Sheet mobile menu
     hero.tsx                — Server Component — centered hero + side decorations
     features.tsx            — Server Component — 3-col feature card grid
@@ -1147,6 +1380,7 @@ src/
     theme-provider.tsx      — next-themes wrapper (Client internally, Server-compatible)
     ui/                     — shadcn primitives (do not edit manually)
       form.tsx              — Form + FormField + FormItem + FormLabel + FormControl + FormMessage
+      password-input.tsx    — Input + show/hide toggle (use for all password fields)
       input.tsx / textarea.tsx / select.tsx / label.tsx
       sonner.tsx            — Toaster wrapper
       alert.tsx / alert-dialog.tsx
@@ -1157,6 +1391,8 @@ src/
     site.ts / navigation.ts / features.ts / content.ts / index.ts
   lib/
     utils.ts                — cn() utility
+public/
+  robots.txt               — crawler rules + sitemap pointer
 ```
 
 ---
