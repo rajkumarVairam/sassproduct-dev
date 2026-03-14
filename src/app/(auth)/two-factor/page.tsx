@@ -1,10 +1,4 @@
 import type { Metadata } from "next";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-} from "@/components/ui/card";
 import { TwoFactorForm } from "@/components/auth/two-factor-form";
 
 export const metadata: Metadata = {
@@ -14,21 +8,15 @@ export const metadata: Metadata = {
 
 export default function TwoFactorPage() {
   return (
-    <div className="w-full max-w-md">
-      <div className="text-center mb-8">
-        <h1 className="text-2xl font-bold tracking-tight">Two-factor verification</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Enter your verification code to complete sign-in
+    <div className="w-full max-w-sm">
+      <div className="text-center mb-6">
+        <h1 className="text-2xl font-bold tracking-tight">Verify your identity</h1>
+        <p className="mt-1.5 text-sm text-muted-foreground">
+          Enter the code from your authenticator app to continue
         </p>
       </div>
-      <Card>
-        <CardHeader className="sr-only">
-          <CardDescription>Two-factor verification form</CardDescription>
-        </CardHeader>
-        <CardContent className="p-6">
-          <TwoFactorForm />
-        </CardContent>
-      </Card>
+
+      <TwoFactorForm />
     </div>
   );
 }
