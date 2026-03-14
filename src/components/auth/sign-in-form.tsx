@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,6 +18,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Button } from "@/components/ui/button";
+import { authClient } from "@/lib/auth-client";
 
 const signInSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -26,19 +28,40 @@ const signInSchema = z.object({
 type SignInValues = z.infer<typeof signInSchema>;
 
 export function SignInForm() {
+  const router = useRouter();
+
   const form = useForm<SignInValues>({
     resolver: zodResolver(signInSchema),
     defaultValues: { email: "", password: "" },
   });
 
   async function onSubmit(values: SignInValues) {
-    try {
-      // TODO: replace with authClient.signIn.email(values)
-      await new Promise((r) => setTimeout(r, 1000));
-      console.log("sign-in values:", values);
-      toast.success("Signed in successfully");
-    } catch {
-      form.setError("root", { message: "Invalid email or password." });
+    const { error } = await authClient.signIn.email(
+      {
+        email: values.email,
+        password: values.password,
+        callbackURL: "/dashboard",
+      },
+      {
+        onSuccess() {
+          router.push("/dashboard");
+          router.refresh();
+        },
+        onError(ctx) {
+          if (ctx.error.status === 403) {
+            // Email not verified — prompt them to check inbox
+            toast.error("Please verify your email before signing in.");
+            return;
+          }
+          form.setError("root", {
+            message: ctx.error.message ?? "Invalid email or password.",
+          });
+        },
+      }
+    );
+
+    if (error && error.status !== 302) {
+      // 302 means redirected (2FA redirect) — already handled by twoFactorClient plugin
     }
   }
 
@@ -97,10 +120,22 @@ export function SignInForm() {
           </p>
         )}
         <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-          {form.formState.isSubmitting && (
-            <Loader2Icon className="animate-spin" data-icon />
-          )}
+          {form.formState.isSubmitting && <Loader2Icon className="animate-spin" data-icon />}
           Sign in
+        </Button>
+
+        {/* Passkey sign-in */}
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full"
+          onClick={async () => {
+            const { error } = await authClient.signIn.passkey();
+            if (error) toast.error(error.message ?? "Passkey sign-in failed.");
+            else router.push("/dashboard");
+          }}
+        >
+          Sign in with passkey
         </Button>
       </form>
     </Form>

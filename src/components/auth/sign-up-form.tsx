@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -16,6 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Button } from "@/components/ui/button";
+import { authClient } from "@/lib/auth-client";
 
 const signUpSchema = z
   .object({
@@ -28,7 +30,7 @@ const signUpSchema = z
       .regex(/[0-9]/, "Must contain at least one number"),
     confirmPassword: z.string(),
   })
-  .refine((data) => data.password === data.confirmPassword, {
+  .refine((d) => d.password === d.confirmPassword, {
     message: "Passwords do not match",
     path: ["confirmPassword"],
   });
@@ -36,20 +38,37 @@ const signUpSchema = z
 type SignUpValues = z.infer<typeof signUpSchema>;
 
 export function SignUpForm() {
+  const router = useRouter();
+
   const form = useForm<SignUpValues>({
     resolver: zodResolver(signUpSchema),
     defaultValues: { name: "", email: "", password: "", confirmPassword: "" },
   });
 
   async function onSubmit(values: SignUpValues) {
-    try {
-      // TODO: replace with authClient.signUp.email({ name, email, password })
-      await new Promise((r) => setTimeout(r, 1000));
-      console.log("sign-up values:", values);
-      toast.success("Account created! Check your email to verify.");
-    } catch {
-      form.setError("root", { message: "Something went wrong. Please try again." });
-    }
+    await authClient.signUp.email(
+      {
+        name: values.name,
+        email: values.email,
+        password: values.password,
+        callbackURL: "/dashboard",
+      },
+      {
+        onSuccess() {
+          toast.success("Account created! Check your email to verify your address.");
+          router.push("/sign-in");
+        },
+        onError(ctx) {
+          if (ctx.error.message?.toLowerCase().includes("email")) {
+            form.setError("email", { message: ctx.error.message });
+          } else {
+            form.setError("root", {
+              message: ctx.error.message ?? "Something went wrong. Please try again.",
+            });
+          }
+        },
+      }
+    );
   }
 
   return (
@@ -133,9 +152,7 @@ export function SignUpForm() {
           </p>
         )}
         <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-          {form.formState.isSubmitting && (
-            <Loader2Icon className="animate-spin" data-icon />
-          )}
+          {form.formState.isSubmitting && <Loader2Icon className="animate-spin" data-icon />}
           Create account
         </Button>
       </form>

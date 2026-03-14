@@ -23,7 +23,14 @@
       "Bash(npx shadcn@latest add form input label textarea select)",
       "Bash(npx shadcn@latest add form)",
       "Bash(npx shadcn@latest add --help)",
-      "Bash(npx shadcn@latest add -y form)"
+      "Bash(npx shadcn@latest add -y form)",
+      "WebFetch(domain:www.better-auth.com)",
+      "Bash(npx shadcn@latest add tabs --yes)",
+      "Bash(npx shadcn@latest add sidebar --yes)",
+      "Bash(npx shadcn@latest add avatar --yes)"
+    ],
+    "additionalDirectories": [
+      "c:\\Development\\sassproduct-dev\\src\\app\\api\\auth"
     ]
   }
 }
