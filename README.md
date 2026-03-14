@@ -88,6 +88,8 @@ npx drizzle-kit push
 # npx drizzle-kit generate && npx drizzle-kit migrate
 ```
 
+> **Note:** `drizzle-kit` runs outside Next.js and does not load `.env.local` automatically. `drizzle.config.ts` handles this with `dotenv` — just make sure `.env.local` exists and contains `DATABASE_URL` before running any `drizzle-kit` command.
+
 ---
 
 ### Step 5 — Start the dev server
