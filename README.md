@@ -318,6 +318,76 @@ npx shadcn@latest add <component>
 
 ---
 
+## Integration testing
+
+### Prerequisites (must complete before testing any auth flow)
+
+**1. Environment variables** — copy and fill in at minimum:
+
+```bash
+cp .env.example .env.local
+# Required: BETTER_AUTH_SECRET, DATABASE_URL, NEXT_PUBLIC_APP_URL
+```
+
+**2. Generate schema and push tables** — the `src/db/auth-schema.ts` file ships as a stub. Without real tables in the database, every auth action throws a silent DB error.
+
+```bash
+npx @better-auth/cli@latest generate --output src/db/auth-schema.ts
+npx drizzle-kit push
+```
+
+Verify tables were created (opens a browser UI at `localhost:4983`):
+
+```bash
+npx drizzle-kit studio
+```
+
+**3. Start the dev server**
+
+```bash
+npm run dev
+```
+
+**4. Email — no provider needed in dev**
+
+Without `RESEND_API_KEY`, all emails (verification links, password reset links, OTP codes, org invitations) are printed to the terminal. Copy the URL from the terminal output and open it in the browser to complete each flow.
+
+---
+
+### Per-feature requirements
+
+| Feature | Extra requirement |
+|---------|------------------|
+| Sign up / Sign in | Steps 1–4 above |
+| Email verification | Copy link from terminal output |
+| Password reset | Copy link from terminal output |
+| Two-factor TOTP | Authenticator app (Google Authenticator, 1Password, or similar) |
+| Two-factor email OTP | Copy code from terminal output |
+| Passkeys | Chrome, Safari, or Firefox with device biometrics or PIN |
+| Organizations | At least one verified account |
+| OAuth (GitHub / Google) | OAuth app credentials + uncomment provider in `src/lib/auth.ts` |
+| Stripe billing | Stripe test keys + `stripe listen` CLI for local webhooks |
+
+---
+
+### Recommended test order
+
+Test in this sequence — each flow depends on the previous one working:
+
+1. Sign up → user created in DB
+2. Email verification → copy link from terminal, open in browser
+3. Sign in → succeeds after verification
+4. Sign out → session cleared
+5. Forgot password → copy reset link from terminal, set new password
+6. Sign in with new password
+7. Enable 2FA → Settings → Security → Enable 2FA → scan QR → verify
+8. Sign out → sign in → enter TOTP code
+9. Register passkey → Settings → Security → Register a passkey
+10. Sign out → sign in with passkey
+11. Create organization → invite a second test account → accept invite
+
+---
+
 ## AI agent rules
 
 See [CLAUDE.md](./CLAUDE.md) — loaded automatically by Claude Code. Enforces shadcn/ui conventions, mobile-first responsive rules, accessibility requirements, and component composition patterns.
