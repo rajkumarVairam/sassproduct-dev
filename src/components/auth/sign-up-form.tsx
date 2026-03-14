@@ -51,7 +51,6 @@ export function SignUpForm() {
         name: values.name,
         email: values.email,
         password: values.password,
-        callbackURL: "/dashboard",
       },
       {
         onSuccess() {

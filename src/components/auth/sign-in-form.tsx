@@ -36,11 +36,10 @@ export function SignInForm() {
   });
 
   async function onSubmit(values: SignInValues) {
-    const { error } = await authClient.signIn.email(
+    await authClient.signIn.email(
       {
         email: values.email,
         password: values.password,
-        callbackURL: "/dashboard",
       },
       {
         onSuccess() {
@@ -59,10 +58,6 @@ export function SignInForm() {
         },
       }
     );
-
-    if (error && error.status !== 302) {
-      // 302 means redirected (2FA redirect) — already handled by twoFactorClient plugin
-    }
   }
 
   return (
